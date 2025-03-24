@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Link Comparison</title>
+    <style>
+        :root {
+            --primary-color: #4c9baf;
+            --primary-hover: #3d8a9d;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --input-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --stats-bg: #f8f9fa;
+            --stats-border: #e9ecef;
+            --link-color: #007BFF;
+            --link-hover: #0056b3;
+            --diff-bg: #fff5f5;
+            --diff-border: #ff6b6b;
+            --missing-bg: #fff9e6;
+            --missing-border: #ffd93d;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #64b5f6;
+            --primary-hover: #42a5f5;
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --input-bg: #2d2d2d;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --stats-bg: #2d2d2d;
+            --stats-border: #404040;
+            --link-color: #64b5f6;
+            --link-hover: #42a5f5;
+            --diff-bg: #3d2d2d;
+            --diff-border: #ff6b6b;
+            --missing-bg: #3d3d2d;
+            --missing-border: #ffd93d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 2.5em;
+        }
+
+        .document-title {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--stats-bg);
+        }
+
+        .comparison-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .column {
+            width: 48%;
+            background-color: var(--input-bg);
+            padding: 20px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .column h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .link-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .link-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            transition: all 0.3s ease;
+        }
+
+        .link-item.different {
+            border-color: var(--diff-border);
+            background-color: var(--diff-bg);
+        }
+
+        .link-item.missing {
+            border-color: var(--missing-border);
+            background-color: var(--missing-bg);
+        }
+
+        .link-item a {
+            text-decoration: none;
+            color: var(--link-color);
+            word-break: break-all;
+            transition: color 0.3s;
+        }
+
+        .link-item a:hover {
+            color: var(--link-hover);
+            text-decoration: underline;
+        }
+
+        .line-number {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .comparison-container {
+                flex-direction: column;
+            }
+
+            .column {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1 id="pageTitle">Link Comparison</h1>
+                <p id="documentTitle" class="document-title"></p>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 <span id="themeText">Dark Mode</span></button>
+        </div>
+        <div class="comparison-container">
+            <div class="column">
+                <h2>Document Links</h2>
+                <ul id="documentLinks" class="link-list"></ul>
+            </div>
+            <div class="column">
+                <h2>Site Links</h2>
+                <ul id="siteLinks" class="link-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme handling
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('themeText').textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+        // Levenshtein distance for fuzzy matching
+        function levenshteinDistance(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= a.length; j++) {
+                matrix[0][j] = j;
+            }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        // Check if two links are similar enough
+        function areLinksSimilar(link1, link2) {
+            const distance = levenshteinDistance(link1, link2);
+            const maxLength = Math.max(link1.length, link2.length);
+            return distance <= Math.floor(maxLength * 0.2); // 20% threshold
+        }
+
+        // Create link element
+        function createLinkElement(link, lineNumber) {
+            const li = document.createElement('li');
+            li.className = 'link-item';
+            
+            const lineNumberDiv = document.createElement('div');
+            lineNumberDiv.className = 'line-number';
+            lineNumberDiv.textContent = `Line ${lineNumber + 1}`;
+            
+            const linkDiv = document.createElement('div');
+            const a = document.createElement('a');
+            a.href = link;
+            a.textContent = link;
+            a.target = '_blank';
+            
+            linkDiv.appendChild(a);
+            li.appendChild(lineNumberDiv);
+            li.appendChild(linkDiv);
+            
+            return li;
+        }
+
+        // Compare and display links
+        function compareAndDisplayLinks() {
+            const documentLinks = JSON.parse(localStorage.getItem('documentLinks')) || [];
+            const siteLinks = JSON.parse(localStorage.getItem('siteLinks')) || [];
+            const processedDocumentText = localStorage.getItem('processedDocumentText');
+            
+            // Update page title and document title with first non-empty line of document text
+            if (processedDocumentText) {
+                // Create a temporary div to parse HTML content
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = processedDocumentText;
+                
+                // Get all lines and find the first non-empty one
+                const lines = tempDiv.textContent.split('\n');
+                const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
+                console.log('First non-empty line:', firstNonEmptyLine); // Debug log
+                
+                if (firstNonEmptyLine) {
+                    document.getElementById('documentTitle').textContent = firstNonEmptyLine.trim();
+                    document.title = `${firstNonEmptyLine.trim()} - Links Comparison`;
+                }
+            }
+            
+            const documentLinksList = document.getElementById('documentLinks');
+            const siteLinksList = document.getElementById('siteLinks');
+            
+            documentLinksList.innerHTML = '';
+            siteLinksList.innerHTML = '';
+
+            const maxLength = Math.max(documentLinks.length, siteLinks.length);
+
+            for (let i = 0; i < maxLength; i++) {
+                const documentLink = documentLinks[i] || '';
+                const siteLink = siteLinks[i] || '';
+
+                const documentLi = createLinkElement(documentLink, i);
+                const siteLi = createLinkElement(siteLink, i);
+
+                if (documentLink !== siteLink) {
+                    if (!documentLink) {
+                        documentLi.classList.add('missing');
+                        siteLi.classList.add('different');
+                    } else if (!siteLink) {
+                        documentLi.classList.add('different');
+                        siteLi.classList.add('missing');
+                    } else if (!areLinksSimilar(documentLink, siteLink)) {
+                        documentLi.classList.add('different');
+                        siteLi.classList.add('different');
+                    }
+                }
+
+                documentLinksList.appendChild(documentLi);
+                siteLinksList.appendChild(siteLi);
+            }
+        }
+
+        // Initial load
+        compareAndDisplayLinks();
+    </script>
+</body>
+</html>

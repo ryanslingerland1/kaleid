@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Formatter with Links</title>
+    <style>
+        :root {
+            --primary-color: #4c9baf;
+            --primary-hover: #3d8a9d;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --input-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --stats-bg: #f8f9fa;
+            --stats-border: #e9ecef;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #64b5f6;
+            --primary-hover: #42a5f5;
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --input-bg: #2d2d2d;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --stats-bg: #2d2d2d;
+            --stats-border: #404040;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 2.5em;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--stats-bg);
+        }
+
+        .text-input {
+            width: 100%;
+            margin-bottom: 30px;
+            background-color: var(--input-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            padding: 20px;
+        }
+
+        .input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: var(--stats-bg);
+            border-radius: 6px;
+            border: 1px solid var(--stats-border);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
+        .contenteditable {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            min-height: 150px;
+            max-height: 500px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: inherit;
+            line-height: 1.6;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-radius: 6px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .contenteditable:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(76, 155, 175, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .output {
+            white-space: pre-wrap;
+            background-color: var(--input-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .stats-container {
+                flex-wrap: wrap;
+            }
+
+            .button-group {
+                flex-wrap: wrap;
+            }
+
+            button {
+                flex: 1;
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Document Comparison</h1>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 <span id="themeText">Dark Mode</span></button>
+        </div>
+
+        <div class="text-input">
+            <div class="input-header">
+                <h2 class="input-title">Document Text</h2>
+            </div>
+            <div class="stats-container" id="documentStats">
+                <div class="stat-item">Words: <span id="documentWordCount">0</span></div>
+                <div class="stat-item">Links: <span id="documentLinkCount">0</span></div>
+                <div class="stat-item">Lines: <span id="documentLineCount">0</span></div>
+            </div>
+            <div id="documentText" class="contenteditable" contenteditable="true" onpaste="handlePaste(event)" spellcheck="true" oninput="updateStats('document')"></div>
+        </div>
+
+        <div class="text-input">
+            <div class="input-header">
+                <h2 class="input-title">Site Text</h2>
+            </div>
+            <div class="stats-container" id="siteStats">
+                <div class="stat-item">Words: <span id="siteWordCount">0</span></div>
+                <div class="stat-item">Links: <span id="siteLinkCount">0</span></div>
+                <div class="stat-item">Lines: <span id="siteLineCount">0</span></div>
+            </div>
+            <div id="siteText" class="contenteditable" contenteditable="true" onpaste="handlePaste(event)" spellcheck="true" oninput="updateStats('site')"></div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="viewProcessedText()">View Processed Text</button>
+            <button onclick="viewLinks()">View Links</button>
+            <button onclick="clearAll()">Clear All</button>
+        </div>
+
+        <div id="output" class="output"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Theme handling
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('themeText').textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+        // Stats update function
+        function updateStats(type) {
+            const text = document.getElementById(type + 'Text').innerText;
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0).length;
+            const lines = text.split('\n').filter(line => line.trim().length > 0).length;
+            const links = (text.match(/https?:\/\/[^\s]+/g) || []).length;
+
+            document.getElementById(type + 'WordCount').textContent = words;
+            document.getElementById(type + 'LineCount').textContent = lines;
+            document.getElementById(type + 'LinkCount').textContent = links;
+        }
+
+        // Clear all function
+        function clearAll() {
+            document.getElementById('documentText').innerHTML = '';
+            document.getElementById('siteText').innerHTML = '';
+            document.getElementById('output').innerHTML = '';
+            updateStats('document');
+            updateStats('site');
+        }
+
+        // Initialize stats
+        updateStats('document');
+        updateStats('site');
+    </script>
+</body>
+</html>

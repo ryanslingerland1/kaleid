@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text Comparison</title>
+    <style>
+        :root {
+            --primary-color: #4c9baf;
+            --primary-hover: #3d8a9d;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --input-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --stats-bg: #f8f9fa;
+            --stats-border: #e9ecef;
+            --link-color: #007BFF;
+            --link-hover: #0056b3;
+            --diff-bg: #fff5f5;
+            --diff-border: #ff6b6b;
+            --missing-bg: #fff9e6;
+            --missing-border: #ffd93d;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #64b5f6;
+            --primary-hover: #42a5f5;
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --border-color: #404040;
+            --input-bg: #2d2d2d;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --stats-bg: #2d2d2d;
+            --stats-border: #404040;
+            --link-color: #64b5f6;
+            --link-hover: #42a5f5;
+            --diff-bg: #3d2d2d;
+            --diff-border: #ff6b6b;
+            --missing-bg: #3d3d2d;
+            --missing-border: #ffd93d;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 2.5em;
+        }
+
+        .document-title {
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 1.2em;
+            margin: 0;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--stats-bg);
+        }
+
+        .comparison-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            position: relative;
+        }
+
+        .column {
+            width: 48%;
+            background-color: var(--input-bg);
+            padding: 20px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .column h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .text-content {
+            white-space: pre-wrap;
+            font-family: monospace;
+            line-height: 1.5;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .text-content-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .line-item {
+            padding: 4px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .line-item.different {
+            background-color: var(--diff-bg);
+            border-left: 3px solid var(--diff-border);
+        }
+
+        .line-item.missing {
+            background-color: var(--missing-bg);
+            border-left: 3px solid var(--missing-border);
+        }
+
+        .diff-highlight {
+            border-radius: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .diff-highlight:first-child {
+            border-top-left-radius: 2px;
+            border-bottom-left-radius: 2px;
+        }
+
+        .diff-highlight:last-child {
+            border-top-right-radius: 2px;
+            border-bottom-right-radius: 2px;
+        }
+
+        .diff-highlight.added {
+            background-color: #ccffcc;
+            color: #006600;
+        }
+
+        .diff-highlight.removed {
+            background-color: #ffcccc;
+            color: #cc0000;
+            text-decoration: line-through;
+        }
+
+        [data-theme="dark"] .diff-highlight.added {
+            background-color: #1a3d1a;
+            color: #99ff99;
+        }
+
+        [data-theme="dark"] .diff-highlight.removed {
+            background-color: #3d1a1a;
+            color: #ff9999;
+        }
+
+        .diff-highlight.missing {
+            background-color: #ffeb3b;
+            color: #000000;
+            font-style: italic;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        [data-theme="dark"] .diff-highlight.missing {
+            background-color: #3d3d2d;
+            color: #ffeb3b;
+        }
+
+        /* Update focused highlight style */
+        .diff-highlight.focused {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+
+        /* Make sure the focus outline wraps the entire group */
+        .diff-highlight.focused:first-child {
+            box-shadow: -2px 0 0 0 var(--primary-color),
+                       0 -2px 0 0 var(--primary-color),
+                       0 2px 0 0 var(--primary-color);
+        }
+
+        .diff-highlight.focused:last-child {
+            box-shadow: 2px 0 0 0 var(--primary-color),
+                       0 -2px 0 0 var(--primary-color),
+                       0 2px 0 0 var(--primary-color);
+        }
+
+        .diff-highlight.focused:not(:first-child):not(:last-child) {
+            box-shadow: 0 -2px 0 0 var(--primary-color),
+                       0 2px 0 0 var(--primary-color);
+        }
+
+        .line-number {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: 0.9em;
+            margin-right: 8px;
+            display: inline-block;
+            min-width: 40px;
+        }
+
+        /* Update navigation arrows styles */
+        .nav-arrows {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .nav-arrow {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            font-size: 20px;
+        }
+
+        .nav-arrow:hover {
+            opacity: 1;
+        }
+
+        .nav-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-arrow.prev {
+            transform: rotate(90deg);
+        }
+
+        .nav-arrow.next {
+            transform: rotate(90deg);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .comparison-container {
+                flex-direction: column;
+            }
+
+            .column {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1 id="pageTitle">Text Comparison</h1>
+                <p id="documentTitle" class="document-title"></p>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">🌓 <span id="themeText">Dark Mode</span></button>
+        </div>
+        <div class="comparison-container">
+            <div class="column">
+                <h2>Document Text</h2>
+                <div class="text-content-wrapper">
+                    <div id="documentText" class="text-content"></div>
+                </div>
+            </div>
+            <div class="column">
+                <h2>Site Text</h2>
+                <div class="text-content-wrapper">
+                    <div id="siteText" class="text-content"></div>
+                </div>
+            </div>
+            <div class="nav-arrows">
+                <button class="nav-arrow prev" onclick="navigateHighlights('prev')">↓</button>
+                <button class="nav-arrow next" onclick="navigateHighlights('next')">↑</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme handling
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('themeText').textContent = newTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+
+        // Levenshtein distance for fuzzy matching
+        function levenshteinDistance(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= a.length; j++) {
+                matrix[0][j] = j;
+            }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        // Check if two lines are similar enough
+        function areLinesSimilar(line1, line2) {
+            const distance = levenshteinDistance(line1, line2);
+            const maxLength = Math.max(line1.length, line2.length);
+            return distance <= Math.floor(maxLength * 0.2); // 20% threshold
+        }
+
+        // Create line element
+        function createLineElement(line, lineNumber) {
+            const div = document.createElement('div');
+            div.className = 'line-item';
+            
+            const lineNumberSpan = document.createElement('span');
+            lineNumberSpan.className = 'line-number';
+            lineNumberSpan.textContent = `${lineNumber + 1}`;
+            
+            const lineContent = document.createElement('span');
+            lineContent.textContent = line;
+            
+            div.appendChild(lineNumberSpan);
+            div.appendChild(lineContent);
+            
+            return div;
+        }
+
+        // Add these new functions before the initial load
+        let currentHighlightIndex = -1;
+        let allHighlights = [];
+        let highlightGroups = [];
+
+        function groupAdjacentHighlights() {
+            // Get all highlights from both document and site text
+            const documentHighlights = [...document.querySelector('#documentText').querySelectorAll('.diff-highlight')];
+            const siteHighlights = [...document.querySelector('#siteText').querySelectorAll('.diff-highlight')];
+            
+            highlightGroups = [];
+            
+            // Helper function to group adjacent highlights
+            function groupHighlightsInText(highlights) {
+                let currentGroup = [];
+                
+                for (let i = 0; i < highlights.length; i++) {
+                    const current = highlights[i];
+                    const next = highlights[i + 1];
+                    
+                    currentGroup.push(current);
+                    
+                    // Check if this is the last highlight or if there's a gap
+                    if (!next || !areCharactersAdjacent(current, next)) {
+                        if (currentGroup.length > 0) {
+                            highlightGroups.push([...currentGroup]);
+                        }
+                        currentGroup = [];
+                    }
+                }
+            }
+            
+            // Group highlights in both text areas
+            groupHighlightsInText(documentHighlights);
+            groupHighlightsInText(siteHighlights);
+            
+            // Update allHighlights to contain only the first highlight of each group
+            allHighlights = highlightGroups.map(group => group[0]);
+            console.log('Found highlight groups:', highlightGroups.length);
+        }
+
+        function areCharactersAdjacent(el1, el2) {
+            // Check if elements are in the same text container
+            if (!el1.parentElement.contains(el2)) return false;
+            
+            // Get the text node positions
+            const range1 = document.createRange();
+            range1.selectNode(el1);
+            const range2 = document.createRange();
+            range2.selectNode(el2);
+            
+            // Check if the end of first element is immediately before start of second
+            const endPos1 = range1.getBoundingClientRect().right;
+            const startPos2 = range2.getBoundingClientRect().left;
+            
+            // Allow for a small gap (2 pixels) to account for spacing
+            return Math.abs(endPos1 - startPos2) <= 2;
+        }
+
+        function navigateHighlights(direction) {
+            if (allHighlights.length === 0) return;
+
+            // Remove focus from current group
+            if (currentHighlightIndex >= 0) {
+                highlightGroups[currentHighlightIndex].forEach(highlight => {
+                    highlight.classList.remove('focused');
+                });
+            }
+
+            // Update index
+            if (direction === 'next') {
+                currentHighlightIndex = (currentHighlightIndex + 1) % allHighlights.length;
+            } else {
+                currentHighlightIndex = (currentHighlightIndex - 1 + allHighlights.length) % allHighlights.length;
+            }
+
+            // Add focus to new group
+            highlightGroups[currentHighlightIndex].forEach(highlight => {
+                highlight.classList.add('focused');
+            });
+
+            // Scroll the first highlight of the group into view
+            allHighlights[currentHighlightIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            updateNavigationButtons();
+            console.log('Navigated to group:', currentHighlightIndex);
+        }
+
+        function updateNavigationButtons() {
+            const prevButton = document.querySelector('.nav-arrow.prev');
+            const nextButton = document.querySelector('.nav-arrow.next');
+            
+            prevButton.disabled = currentHighlightIndex <= 0;
+            nextButton.disabled = currentHighlightIndex >= allHighlights.length - 1;
+        }
+
+        // Update the compareAndDisplayText function to use highlight groups
+        function compareAndDisplayText() {
+            const processedDocumentText = localStorage.getItem('processedDocumentText');
+            const processedSiteText = localStorage.getItem('processedSiteText');
+            
+            // Update page title and document title with first word of document text
+            if (processedDocumentText) {
+                // Create a temporary div to parse HTML content
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = processedDocumentText;
+                
+                // Get all lines and find the first non-empty one
+                const lines = tempDiv.textContent.split('\n');
+                const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
+                
+                if (firstNonEmptyLine) {
+                    // Get the first word from the first non-empty line
+                    const firstWord = firstNonEmptyLine.trim().split(/\s+/)[0];
+                    console.log('First word:', firstWord); // Debug log
+                    
+                    if (firstWord) {
+                        document.getElementById('documentTitle').textContent = firstWord;
+                        document.title = `${firstWord} - Text Comparison`;
+                    }
+                }
+            }
+            
+            const documentTextDiv = document.getElementById('documentText');
+            const siteTextDiv = document.getElementById('siteText');
+            
+            documentTextDiv.innerHTML = '';
+            siteTextDiv.innerHTML = '';
+
+            if (processedDocumentText && processedSiteText) {
+                const tempDocDiv = document.createElement('div');
+                const tempSiteDiv = document.createElement('div');
+                tempDocDiv.innerHTML = processedDocumentText;
+                tempSiteDiv.innerHTML = processedSiteText;
+
+                // Split into lines and filter out blank lines
+                const documentLines = tempDocDiv.textContent.split('\n').filter(line => line.trim().length > 0);
+                const siteLines = tempSiteDiv.textContent.split('\n').filter(line => line.trim().length > 0);
+                
+                const maxLength = Math.max(documentLines.length, siteLines.length);
+
+                // Reset highlights array and collect highlights
+                allHighlights = [];
+                currentHighlightIndex = -1;
+                highlightGroups = [];
+
+                for (let i = 0; i < maxLength; i++) {
+                    const documentLine = documentLines[i] || '';
+                    const siteLine = siteLines[i] || '';
+
+                    const documentLineElement = createLineElement(documentLine, i);
+                    const siteLineElement = createLineElement(siteLine, i);
+
+                    if (documentLine !== siteLine) {
+                        if (!documentLine) {
+                            documentLineElement.classList.add('missing');
+                            siteLineElement.classList.add('different');
+                        } else if (!siteLine) {
+                            documentLineElement.classList.add('different');
+                            siteLineElement.classList.add('missing');
+                        } else {
+                            documentLineElement.classList.add('different');
+                            siteLineElement.classList.add('different');
+                            highlightDifferences(documentLine, siteLine, documentLineElement, siteLineElement);
+                        }
+                    }
+
+                    documentTextDiv.appendChild(documentLineElement);
+                    siteTextDiv.appendChild(siteLineElement);
+                }
+
+                // Group highlights and update navigation
+                groupAdjacentHighlights();
+                if (allHighlights.length > 0) {
+                    currentHighlightIndex = 0;
+                    highlightGroups[0].forEach(highlight => {
+                        highlight.classList.add('focused');
+                    });
+                }
+                updateNavigationButtons();
+            }
+        }
+
+        // Modify highlightDifferences to add data attributes for tracking
+        function highlightDifferences(line1, line2, element1, element2) {
+            // Split into words while preserving punctuation
+            const words1 = line1.match(/\S+|\s+/g) || [];
+            const words2 = line2.match(/\S+|\s+/g) || [];
+            
+            const maxLength = Math.max(words1.length, words2.length);
+            let result1 = [];
+            let result2 = [];
+            
+            for (let i = 0; i < maxLength; i++) {
+                const word1 = words1[i] || '';
+                const word2 = words2[i] || '';
+                
+                if (word1 !== word2) {
+                    if (!word1) {
+                        result2.push(`<span class="diff-highlight added" data-highlight="true">${word2}</span>`);
+                        result1.push(`<span class="diff-highlight missing" data-highlight="true">[missing]</span>`);
+                    } else if (!word2) {
+                        result1.push(`<span class="diff-highlight removed" data-highlight="true">${word1}</span>`);
+                        result2.push(`<span class="diff-highlight missing" data-highlight="true">[missing]</span>`);
+                    } else {
+                        const diff = findWordDifferences(word1, word2);
+                        result1.push(diff[0]);
+                        result2.push(diff[1]);
+                    }
+                } else {
+                    result1.push(word1);
+                    result2.push(word2);
+                }
+            }
+            
+            element1.querySelector('span:not(.line-number)').innerHTML = result1.join('');
+            element2.querySelector('span:not(.line-number)').innerHTML = result2.join('');
+        }
+
+        // Modify findWordDifferences to add data attributes
+        function findWordDifferences(word1, word2) {
+            const maxLength = Math.max(word1.length, word2.length);
+            let result1 = '';
+            let result2 = '';
+            
+            for (let i = 0; i < maxLength; i++) {
+                const char1 = word1[i] || '';
+                const char2 = word2[i] || '';
+                
+                if (char1 !== char2) {
+                    if (!char1) {
+                        result2 += `<span class="diff-highlight added" data-highlight="true">${char2}</span>`;
+                        result1 += `<span class="diff-highlight missing" data-highlight="true">[missing]</span>`;
+                    } else if (!char2) {
+                        result1 += `<span class="diff-highlight removed" data-highlight="true">${char1}</span>`;
+                        result2 += `<span class="diff-highlight missing" data-highlight="true">[missing]</span>`;
+                    } else {
+                        result1 += `<span class="diff-highlight removed" data-highlight="true">${char1}</span>`;
+                        result2 += `<span class="diff-highlight added" data-highlight="true">${char2}</span>`;
+                    }
+                } else {
+                    result1 += char1;
+                    result2 += char2;
+                }
+            }
+            
+            return [result1, result2];
+        }
+
+        // Initial load
+        compareAndDisplayText();
+    </script>
+</body>
+</html>
