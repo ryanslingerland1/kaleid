@@ -143,7 +143,7 @@
         .button-group {
             display: flex;
             gap: 10px;
-            margin: 20px 0;
+            margin-bottom: 200px;
         }
 
         button {
@@ -381,7 +381,7 @@
             <button onclick="clearAll()">Clear All</button>
         </div>
 
-        <div id="output" class="output"></div>
+        <div></div>
     </div>
 
     <div class="history-tab">
@@ -437,11 +437,37 @@
         updateStats('site');
 
         // Add these new functions for history functionality
+        function viewProcessedText() {
+            processText();
+            saveToHistory();
+            window.open('processedText.html', '_blank');
+        }
+
+        function viewLinks() {
+            processText();
+            saveToHistory();
+            window.open('links.html', '_blank');
+        }
+
         function saveToHistory() {
             const documentText = document.getElementById('documentText').innerHTML;
             const siteText = document.getElementById('siteText').innerHTML;
             
-            if (!documentText && !siteText) return;
+            // Create temporary divs to parse HTML content
+            const tempDocDiv = document.createElement('div');
+            const tempSiteDiv = document.createElement('div');
+            tempDocDiv.innerHTML = documentText;
+            tempSiteDiv.innerHTML = siteText;
+            
+            // Get text content and check for any non-empty lines
+            const docLines = tempDocDiv.textContent.split('\n');
+            const siteLines = tempSiteDiv.textContent.split('\n');
+            
+            // Check if there's any non-empty line in either text
+            const hasContent = docLines.some(line => line.trim().length > 0) || 
+                             siteLines.some(line => line.trim().length > 0);
+            
+            if (!hasContent) return;
 
             const history = JSON.parse(localStorage.getItem('comparisonHistory') || '[]');
             const newEntry = {
@@ -469,12 +495,32 @@
                 // Create a temporary div to parse HTML content
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = entry.documentText;
-                const preview = tempDiv.textContent.substring(0, 50);
+                
+                // Get text content and normalize it
+                const textContent = tempDiv.textContent
+                    .replace(/\r\n/g, '\n')
+                    .replace(/\r/g, '\n')
+                    .replace(/\t/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                
+                // Split into lines and find the first non-empty line
+                const lines = textContent.split('\n');
+                const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
+                
+                // Get the first word from the first non-empty line
+                let preview = 'No content';
+                if (firstNonEmptyLine) {
+                    const firstWord = firstNonEmptyLine.trim().split(/\s+/)[0];
+                    if (firstWord) {
+                        preview = firstWord;
+                    }
+                }
                 
                 return `
                     <div class="history-item">
                         <div class="timestamp">${entry.timestamp}</div>
-                        <div class="preview">${preview}${tempDiv.textContent.length > 50 ? '...' : ''}</div>
+                        <div class="preview">${preview}</div>
                         <div class="history-actions">
                             <button onclick="openHistoryInNewTab(${entry.id}, 'processed')" class="history-button">Open Processed Text</button>
                             <button onclick="openHistoryInNewTab(${entry.id}, 'links')" class="history-button">Open Links</button>
@@ -490,9 +536,19 @@
             const entry = history.find(e => e.id === id);
             
             if (entry) {
-                // Store the text temporarily
-                localStorage.setItem('processedDocumentText', entry.documentText);
-                localStorage.setItem('processedSiteText', entry.siteText);
+                // Process the text before storing
+                const processedDocumentText = sanitizeAndNormalizeText(entry.documentText);
+                const processedSiteText = sanitizeAndNormalizeText(entry.siteText);
+                
+                // Store the processed text
+                localStorage.setItem('processedDocumentText', processedDocumentText);
+                localStorage.setItem('processedSiteText', processedSiteText);
+                
+                // Extract and store links
+                const documentLinks = extractLinks(entry.documentText);
+                const siteLinks = extractLinks(entry.siteText);
+                localStorage.setItem('documentLinks', JSON.stringify(documentLinks));
+                localStorage.setItem('siteLinks', JSON.stringify(siteLinks));
                 
                 // Open the appropriate page in a new tab
                 const url = type === 'processed' ? 'processedText.html' : 'links.html';
@@ -515,16 +571,6 @@
                 updateHistoryDisplay();
             }
         }
-
-        // Modify the existing processText function to save to history
-        const originalProcessText = processText;
-        processText = function() {
-            originalProcessText();
-            // Only save to history if we're not loading from history
-            if (!document.getElementById('documentText').hasAttribute('data-loading-history')) {
-                saveToHistory();
-            }
-        };
 
         // Initialize history display
         updateHistoryDisplay();

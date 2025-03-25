@@ -284,20 +284,31 @@
             const siteLinks = JSON.parse(localStorage.getItem('siteLinks')) || [];
             const processedDocumentText = localStorage.getItem('processedDocumentText');
             
-            // Update page title and document title with first non-empty line of document text
+            // Update page title and document title with first word of first non-empty line
             if (processedDocumentText) {
                 // Create a temporary div to parse HTML content
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = processedDocumentText;
                 
-                // Get all lines and find the first non-empty one
-                const lines = tempDiv.textContent.split('\n');
+                // Get text content and normalize it
+                const textContent = tempDiv.textContent
+                    .replace(/\r\n/g, '\n')
+                    .replace(/\r/g, '\n')
+                    .replace(/\t/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                
+                // Split into lines and find the first non-empty line
+                const lines = textContent.split('\n');
                 const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
-                console.log('First non-empty line:', firstNonEmptyLine); // Debug log
                 
                 if (firstNonEmptyLine) {
-                    document.getElementById('documentTitle').textContent = firstNonEmptyLine.trim();
-                    document.title = `${firstNonEmptyLine.trim()} - Links Comparison`;
+                    // Get the first word from the first non-empty line
+                    const firstWord = firstNonEmptyLine.trim().split(/\s+/)[0];
+                    if (firstWord) {
+                        document.getElementById('documentTitle').textContent = firstWord;
+                        document.title = `${firstWord} - Links Comparison`;
+                    }
                 }
             }
             
