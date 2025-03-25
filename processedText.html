@@ -290,187 +290,190 @@
             siteTextDiv.innerHTML = '';
 
             if (processedDocumentText && processedSiteText) {
-                // Split into lines
+                // Split into lines and process in chunks
                 const documentLines = processedDocumentText.split('\n');
                 const siteLines = processedSiteText.split('\n');
                 
                 const maxLength = Math.max(documentLines.length, siteLines.length);
+                const chunkSize = 100; // Process 100 lines at a time
+                
+                function processChunk(startIndex) {
+                    const endIndex = Math.min(startIndex + chunkSize, maxLength);
+                    
+                    for (let i = startIndex; i < endIndex; i++) {
+                        const documentLine = (documentLines[i] || '').trim();
+                        const siteLine = (siteLines[i] || '').trim();
 
-            for (let i = 0; i < maxLength; i++) {
-                    const documentLine = (documentLines[i] || '').trim();
-                    const siteLine = (siteLines[i] || '').trim();
+                        const documentLineElement = createLineElement(documentLine, i);
+                        const siteLineElement = createLineElement(siteLine, i);
 
-                    const documentLineElement = createLineElement(documentLine, i);
-                    const siteLineElement = createLineElement(siteLine, i);
-
-                    if (documentLine !== siteLine) {
-                        let docContent = '';
-                        let siteContent = '';
-                        
-                        // Convert lines to arrays for easier manipulation
-                        const docChars = [...documentLine];
-                        const siteChars = [...siteLine];
-                        
-                        // Dynamic programming to find the minimum edit distance and alignment
-                        const m = docChars.length;
-                        const n = siteChars.length;
-                        const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
-                        const backtrack = Array(m + 1).fill().map(() => Array(n + 1).fill(''));
-                        
-                        // Initialize first row and column
-                        for (let i = 0; i <= m; i++) {
-                            dp[i][0] = i;
-                            backtrack[i][0] = 'up';
-                        }
-                        for (let j = 0; j <= n; j++) {
-                            dp[0][j] = j;
-                            backtrack[0][j] = 'left';
-                        }
-                        
-                        // Fill the dp table
-                        for (let i = 1; i <= m; i++) {
-                            for (let j = 1; j <= n; j++) {
-                                if (docChars[i - 1] === siteChars[j - 1]) {
-                                    dp[i][j] = dp[i - 1][j - 1];
-                                    backtrack[i][j] = 'diag';
-                                } else {
-                                    const ins = dp[i][j - 1] + 1;  // insertion
-                                    const del = dp[i - 1][j] + 1;  // deletion
-                                    const sub = dp[i - 1][j - 1] + 1;  // substitution
-                                    dp[i][j] = Math.min(ins, del, sub);
-                                    if (dp[i][j] === ins) backtrack[i][j] = 'left';
-                                    else if (dp[i][j] === del) backtrack[i][j] = 'up';
-                                    else backtrack[i][j] = 'diag';
+                        if (documentLine !== siteLine) {
+                            let docContent = '';
+                            let siteContent = '';
+                            
+                            // Convert lines to arrays for easier manipulation
+                            const docChars = [...documentLine];
+                            const siteChars = [...siteLine];
+                            
+                            // Dynamic programming to find the minimum edit distance and alignment
+                            const m = docChars.length;
+                            const n = siteChars.length;
+                            const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+                            const backtrack = Array(m + 1).fill().map(() => Array(n + 1).fill(''));
+                            
+                            // Initialize first row and column
+                            for (let i = 0; i <= m; i++) {
+                                dp[i][0] = i;
+                                backtrack[i][0] = 'up';
+                            }
+                            for (let j = 0; j <= n; j++) {
+                                dp[0][j] = j;
+                                backtrack[0][j] = 'left';
+                            }
+                            
+                            // Fill the dp table
+                            for (let i = 1; i <= m; i++) {
+                                for (let j = 1; j <= n; j++) {
+                                    if (docChars[i - 1] === siteChars[j - 1]) {
+                                        dp[i][j] = dp[i - 1][j - 1];
+                                        backtrack[i][j] = 'diag';
+                                    } else {
+                                        const ins = dp[i][j - 1] + 1;
+                                        const del = dp[i - 1][j] + 1;
+                                        const sub = dp[i - 1][j - 1] + 1;
+                                        dp[i][j] = Math.min(ins, del, sub);
+                                        if (dp[i][j] === ins) backtrack[i][j] = 'left';
+                                        else if (dp[i][j] === del) backtrack[i][j] = 'up';
+                                        else backtrack[i][j] = 'diag';
+                                    }
                                 }
                             }
-                        }
-                        
-                        // Reconstruct the alignment
-                        let i = m, j = n;
-                        const docResult = [];
-                        const siteResult = [];
-                        
-                        while (i > 0 || j > 0) {
-                            if (i > 0 && j > 0 && docChars[i - 1] === siteChars[j - 1]) {
-                                docResult.unshift(['same', docChars[i - 1]]);
-                                siteResult.unshift(['same', siteChars[j - 1]]);
-                                i--; j--;
-                            } else if (j > 0 && (i === 0 || backtrack[i][j] === 'left')) {
-                                docResult.unshift(['missing', '']);
-                                siteResult.unshift(['added', siteChars[j - 1]]);
-                                j--;
-                            } else if (i > 0 && (j === 0 || backtrack[i][j] === 'up')) {
-                                docResult.unshift(['removed', docChars[i - 1]]);
-                                siteResult.unshift(['missing', '']);
-                                i--;
-                            } else {
-                                docResult.unshift(['removed', docChars[i - 1]]);
-                                siteResult.unshift(['added', siteChars[j - 1]]);
-                                i--; j--;
-                            }
-                        }
-                        
-                        // Build the HTML content
-                        let currentDocHighlight = '';
-                        let currentDocType = '';
-                        let currentSiteHighlight = '';
-                        let currentSiteType = '';
-                        let consecutiveMissing = false;
-
-                        docResult.forEach(([type, char]) => {
-                            if (type === 'same') {
-                                // If we have a pending highlight, add it first
-                                if (currentDocHighlight) {
-                                    docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
-                                    currentDocHighlight = '';
-                                    currentDocType = '';
-                                }
-                                consecutiveMissing = false;
-                                docContent += char;
-                            } else if (type === 'missing') {
-                                // If we have a pending highlight, add it first
-                                if (currentDocHighlight) {
-                                    docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
-                                }
-                                // Only add [missing] if this is the first missing character in a sequence
-                                if (!consecutiveMissing) {
-                                    docContent += `<span class="diff-highlight missing">[missing]</span>`;
-                                }
-                                consecutiveMissing = true;
-                                currentDocHighlight = '';
-                                currentDocType = '';
-                            } else {
-                                consecutiveMissing = false;
-                                // If this is the same type as the current highlight, append to it
-                                if (type === currentDocType) {
-                                    currentDocHighlight += char;
+                            
+                            // Reconstruct the alignment
+                            let i = m, j = n;
+                            const docResult = [];
+                            const siteResult = [];
+                            
+                            while (i > 0 || j > 0) {
+                                if (i > 0 && j > 0 && docChars[i - 1] === siteChars[j - 1]) {
+                                    docResult.unshift(['same', docChars[i - 1]]);
+                                    siteResult.unshift(['same', siteChars[j - 1]]);
+                                    i--; j--;
+                                } else if (j > 0 && (i === 0 || backtrack[i][j] === 'left')) {
+                                    docResult.unshift(['missing', '']);
+                                    siteResult.unshift(['added', siteChars[j - 1]]);
+                                    j--;
+                                } else if (i > 0 && (j === 0 || backtrack[i][j] === 'up')) {
+                                    docResult.unshift(['removed', docChars[i - 1]]);
+                                    siteResult.unshift(['missing', '']);
+                                    i--;
                                 } else {
-                                    // If we have a pending highlight, add it first
+                                    docResult.unshift(['removed', docChars[i - 1]]);
+                                    siteResult.unshift(['added', siteChars[j - 1]]);
+                                    i--; j--;
+                                }
+                            }
+                            
+                            // Build the HTML content
+                            let currentDocHighlight = '';
+                            let currentDocType = '';
+                            let currentSiteHighlight = '';
+                            let currentSiteType = '';
+                            let consecutiveMissing = false;
+
+                            docResult.forEach(([type, char]) => {
+                                if (type === 'same') {
+                                    if (currentDocHighlight) {
+                                        docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                                        currentDocHighlight = '';
+                                        currentDocType = '';
+                                    }
+                                    consecutiveMissing = false;
+                                    docContent += char;
+                                } else if (type === 'missing') {
                                     if (currentDocHighlight) {
                                         docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
                                     }
-                                    currentDocHighlight = char;
-                                    currentDocType = type;
-                                }
-                            }
-                        });
-                        
-                        // Add any remaining highlight
-                        if (currentDocHighlight) {
-                            docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
-                        }
-
-                        consecutiveMissing = false;
-                        siteResult.forEach(([type, char]) => {
-                            if (type === 'same') {
-                                // If we have a pending highlight, add it first
-                                if (currentSiteHighlight) {
-                                    siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
-                                    currentSiteHighlight = '';
-                                    currentSiteType = '';
-                                }
-                                consecutiveMissing = false;
-                                siteContent += char;
-                            } else if (type === 'missing') {
-                                // If we have a pending highlight, add it first
-                                if (currentSiteHighlight) {
-                                    siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
-                                }
-                                // Only add [missing] if this is the first missing character in a sequence
-                                if (!consecutiveMissing) {
-                                    siteContent += `<span class="diff-highlight missing">[missing]</span>`;
-                                }
-                                consecutiveMissing = true;
-                                currentSiteHighlight = '';
-                                currentSiteType = '';
-                            } else {
-                                consecutiveMissing = false;
-                                // If this is the same type as the current highlight, append to it
-                                if (type === currentSiteType) {
-                                    currentSiteHighlight += char;
+                                    if (!consecutiveMissing) {
+                                        docContent += `<span class="diff-highlight missing">[missing]</span>`;
+                                    }
+                                    consecutiveMissing = true;
+                                    currentDocHighlight = '';
+                                    currentDocType = '';
                                 } else {
-                                    // If we have a pending highlight, add it first
+                                    consecutiveMissing = false;
+                                    if (type === currentDocType) {
+                                        currentDocHighlight += char;
+                                    } else {
+                                        if (currentDocHighlight) {
+                                            docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                                        }
+                                        currentDocHighlight = char;
+                                        currentDocType = type;
+                                    }
+                                }
+                            });
+                            
+                            if (currentDocHighlight) {
+                                docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                            }
+
+                            consecutiveMissing = false;
+                            siteResult.forEach(([type, char]) => {
+                                if (type === 'same') {
+                                    if (currentSiteHighlight) {
+                                        siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                                        currentSiteHighlight = '';
+                                        currentSiteType = '';
+                                    }
+                                    consecutiveMissing = false;
+                                    siteContent += char;
+                                } else if (type === 'missing') {
                                     if (currentSiteHighlight) {
                                         siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
                                     }
-                                    currentSiteHighlight = char;
-                                    currentSiteType = type;
+                                    if (!consecutiveMissing) {
+                                        siteContent += `<span class="diff-highlight missing">[missing]</span>`;
+                                    }
+                                    consecutiveMissing = true;
+                                    currentSiteHighlight = '';
+                                    currentSiteType = '';
+                                } else {
+                                    consecutiveMissing = false;
+                                    if (type === currentSiteType) {
+                                        currentSiteHighlight += char;
+                                    } else {
+                                        if (currentSiteHighlight) {
+                                            siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                                        }
+                                        currentSiteHighlight = char;
+                                        currentSiteType = type;
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                        // Add any remaining highlight
-                        if (currentSiteHighlight) {
-                            siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                            if (currentSiteHighlight) {
+                                siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                            }
+
+                            documentLineElement.querySelector('span:not(.line-number)').innerHTML = docContent;
+                            siteLineElement.querySelector('span:not(.line-number)').innerHTML = siteContent;
                         }
 
-                        documentLineElement.querySelector('span:not(.line-number)').innerHTML = docContent;
-                        siteLineElement.querySelector('span:not(.line-number)').innerHTML = siteContent;
+                        documentTextDiv.appendChild(documentLineElement);
+                        siteTextDiv.appendChild(siteLineElement);
                     }
 
-                    documentTextDiv.appendChild(documentLineElement);
-                    siteTextDiv.appendChild(siteLineElement);
+                    // Clean up memory
+                    if (endIndex < maxLength) {
+                        setTimeout(() => {
+                            processChunk(endIndex);
+                        }, 0);
+                    }
                 }
+
+                // Start processing the first chunk
+                processChunk(0);
             }
         }
 
