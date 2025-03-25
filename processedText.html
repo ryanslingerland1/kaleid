@@ -368,27 +368,6 @@
             const processedDocumentText = localStorage.getItem('processedDocumentText');
             const processedSiteText = localStorage.getItem('processedSiteText');
             
-            // Update page title and document title with first word of document text
-            if (processedDocumentText) {
-                // Create a temporary div to parse HTML content
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = processedDocumentText;
-                
-                // Get all lines and find the first non-empty one
-                const lines = tempDiv.textContent.split('\n');
-                const firstNonEmptyLine = lines.find(line => line.trim().length > 0);
-                
-                if (firstNonEmptyLine) {
-                    // Get the first word from the first non-empty line
-                    const firstWord = firstNonEmptyLine.trim().split(/\s+/)[0];
-                    console.log('First word:', firstWord); // Debug log
-                    
-                    if (firstWord) {
-                        document.title = `${firstWord} - Text Comparison`;
-                    }
-                }
-            }
-            
             const documentTextDiv = document.getElementById('documentText');
             const siteTextDiv = document.getElementById('siteText');
             
@@ -396,41 +375,114 @@
             siteTextDiv.innerHTML = '';
 
             if (processedDocumentText && processedSiteText) {
-                const tempDocDiv = document.createElement('div');
-                const tempSiteDiv = document.createElement('div');
-                tempDocDiv.innerHTML = processedDocumentText;
-                tempSiteDiv.innerHTML = processedSiteText;
-
-                // Split into lines and filter out blank lines
-                const documentLines = tempDocDiv.textContent.split('\n').filter(line => line.trim().length > 0);
-                const siteLines = tempSiteDiv.textContent.split('\n').filter(line => line.trim().length > 0);
+                // Split into lines
+                const documentLines = processedDocumentText.split('\n');
+                const siteLines = processedSiteText.split('\n');
                 
                 const maxLength = Math.max(documentLines.length, siteLines.length);
 
-                // Reset highlights array and collect highlights
+                // Reset highlights array
                 allHighlights = [];
                 currentHighlightIndex = -1;
                 highlightGroups = [];
 
                 for (let i = 0; i < maxLength; i++) {
-                    const documentLine = documentLines[i] || '';
-                    const siteLine = siteLines[i] || '';
+                    const documentLine = (documentLines[i] || '').trim();
+                    const siteLine = (siteLines[i] || '').trim();
 
                     const documentLineElement = createLineElement(documentLine, i);
                     const siteLineElement = createLineElement(siteLine, i);
 
                     if (documentLine !== siteLine) {
-                        if (!documentLine) {
-                            documentLineElement.classList.add('missing');
-                            siteLineElement.classList.add('different');
-                        } else if (!siteLine) {
-                            documentLineElement.classList.add('different');
-                            siteLineElement.classList.add('missing');
-                        } else {
-                            documentLineElement.classList.add('different');
-                            siteLineElement.classList.add('different');
-                            highlightDifferences(documentLine, siteLine, documentLineElement, siteLineElement);
+                        let docContent = '';
+                        let siteContent = '';
+                        
+                        // Convert lines to arrays for easier manipulation
+                        const docChars = [...documentLine];
+                        const siteChars = [...siteLine];
+                        
+                        // Dynamic programming to find the minimum edit distance and alignment
+                        const m = docChars.length;
+                        const n = siteChars.length;
+                        const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+                        const backtrack = Array(m + 1).fill().map(() => Array(n + 1).fill(''));
+                        
+                        // Initialize first row and column
+                        for (let i = 0; i <= m; i++) {
+                            dp[i][0] = i;
+                            backtrack[i][0] = 'up';
                         }
+                        for (let j = 0; j <= n; j++) {
+                            dp[0][j] = j;
+                            backtrack[0][j] = 'left';
+                        }
+                        
+                        // Fill the dp table
+                        for (let i = 1; i <= m; i++) {
+                            for (let j = 1; j <= n; j++) {
+                                if (docChars[i - 1] === siteChars[j - 1]) {
+                                    dp[i][j] = dp[i - 1][j - 1];
+                                    backtrack[i][j] = 'diag';
+                                } else {
+                                    const ins = dp[i][j - 1] + 1;  // insertion
+                                    const del = dp[i - 1][j] + 1;  // deletion
+                                    const sub = dp[i - 1][j - 1] + 1;  // substitution
+                                    dp[i][j] = Math.min(ins, del, sub);
+                                    if (dp[i][j] === ins) backtrack[i][j] = 'left';
+                                    else if (dp[i][j] === del) backtrack[i][j] = 'up';
+                                    else backtrack[i][j] = 'diag';
+                                }
+                            }
+                        }
+                        
+                        // Reconstruct the alignment
+                        let i = m, j = n;
+                        const docResult = [];
+                        const siteResult = [];
+                        
+                        while (i > 0 || j > 0) {
+                            if (i > 0 && j > 0 && docChars[i - 1] === siteChars[j - 1]) {
+                                docResult.unshift(['same', docChars[i - 1]]);
+                                siteResult.unshift(['same', siteChars[j - 1]]);
+                                i--; j--;
+                            } else if (j > 0 && (i === 0 || backtrack[i][j] === 'left')) {
+                                docResult.unshift(['missing', '']);
+                                siteResult.unshift(['added', siteChars[j - 1]]);
+                                j--;
+                            } else if (i > 0 && (j === 0 || backtrack[i][j] === 'up')) {
+                                docResult.unshift(['removed', docChars[i - 1]]);
+                                siteResult.unshift(['missing', '']);
+                                i--;
+                            } else {
+                                docResult.unshift(['removed', docChars[i - 1]]);
+                                siteResult.unshift(['added', siteChars[j - 1]]);
+                                i--; j--;
+                            }
+                        }
+                        
+                        // Build the HTML content
+                        docResult.forEach(([type, char]) => {
+                            if (type === 'same') {
+                                docContent += char;
+                            } else if (type === 'removed') {
+                                docContent += `<span class="diff-highlight removed" data-highlight="true">${char}</span>`;
+                            } else if (type === 'missing') {
+                                docContent += `<span class="diff-highlight missing" data-highlight="true"> </span>`;
+                            }
+                        });
+                        
+                        siteResult.forEach(([type, char]) => {
+                            if (type === 'same') {
+                                siteContent += char;
+                            } else if (type === 'added') {
+                                siteContent += `<span class="diff-highlight added" data-highlight="true">${char}</span>`;
+                            } else if (type === 'missing') {
+                                siteContent += `<span class="diff-highlight missing" data-highlight="true"> </span>`;
+                            }
+                        });
+
+                        documentLineElement.querySelector('span:not(.line-number)').innerHTML = docContent;
+                        siteLineElement.querySelector('span:not(.line-number)').innerHTML = siteContent;
                     }
 
                     documentTextDiv.appendChild(documentLineElement);
@@ -447,72 +499,6 @@
                 }
                 updateNavigationButtons();
             }
-        }
-
-        // Modify highlightDifferences to add data attributes for tracking
-        function highlightDifferences(line1, line2, element1, element2) {
-            // Split into words while preserving punctuation
-            const words1 = line1.match(/\S+|\s+/g) || [];
-            const words2 = line2.match(/\S+|\s+/g) || [];
-            
-            const maxLength = Math.max(words1.length, words2.length);
-            let result1 = [];
-            let result2 = [];
-
-            for (let i = 0; i < maxLength; i++) {
-                const word1 = words1[i] || '';
-                const word2 = words2[i] || '';
-                
-                if (word1 !== word2) {
-                    if (!word1) {
-                        result2.push(`<span class="diff-highlight added" data-highlight="true">${word2}</span>`);
-                        result1.push(`<span class="diff-highlight missing" data-highlight="true">[missing]</span>`);
-                    } else if (!word2) {
-                        result1.push(`<span class="diff-highlight removed" data-highlight="true">${word1}</span>`);
-                        result2.push(`<span class="diff-highlight missing" data-highlight="true">[missing]</span>`);
-                    } else {
-                        const diff = findWordDifferences(word1, word2);
-                        result1.push(diff[0]);
-                        result2.push(diff[1]);
-                    }
-                } else {
-                    result1.push(word1);
-                    result2.push(word2);
-                }
-            }
-            
-            element1.querySelector('span:not(.line-number)').innerHTML = result1.join('');
-            element2.querySelector('span:not(.line-number)').innerHTML = result2.join('');
-        }
-
-        // Modify findWordDifferences to add data attributes
-        function findWordDifferences(word1, word2) {
-            const maxLength = Math.max(word1.length, word2.length);
-            let result1 = '';
-            let result2 = '';
-            
-            for (let i = 0; i < maxLength; i++) {
-                const char1 = word1[i] || '';
-                const char2 = word2[i] || '';
-                
-                if (char1 !== char2) {
-                    if (!char1) {
-                        result2 += `<span class="diff-highlight added" data-highlight="true">${char2}</span>`;
-                        result1 += `<span class="diff-highlight missing" data-highlight="true">[missing]</span>`;
-                    } else if (!char2) {
-                        result1 += `<span class="diff-highlight removed" data-highlight="true">${char1}</span>`;
-                        result2 += `<span class="diff-highlight missing" data-highlight="true">[missing]</span>`;
-                    } else {
-                        result1 += `<span class="diff-highlight removed" data-highlight="true">${char1}</span>`;
-                        result2 += `<span class="diff-highlight added" data-highlight="true">${char2}</span>`;
-                    }
-                } else {
-                    result1 += char1;
-                    result2 += char2;
-                }
-            }
-            
-            return [result1, result2];
         }
 
         // Initial load
