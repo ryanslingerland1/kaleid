@@ -1,5 +1,8 @@
 # Text Comparison Tool
 
+## Access
+- https://ryanslingerland1.github.io/textcompare/
+
 A modern, user-friendly web application for comparing text content with advanced highlighting and navigation features. This tool helps identify differences between two text versions with a focus on readability and ease of use.
 
 ## Features
@@ -39,26 +42,3 @@ The application works on all modern browsers:
 - Firefox
 - Safari
 - Edge
-
-## Development
-
-To modify or enhance the application:
-
-1. Clone the repository
-2. Open `index.html` in your browser
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is open source and available under the MIT License.
-
-## Acknowledgments
-
-- Inspired by diff tools and text comparison utilities
-- Built with modern web standards and best practices 
