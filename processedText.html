@@ -2,46 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Text Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaleid - Text Comparison</title>
     <style>
         :root {
-            --primary-color: #4c9baf;
-            --primary-hover: #3d8a9d;
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --border-color: #cccccc;
-            --input-bg: #ffffff;
+            --primary-color: #6B4EFF;
+            --secondary-color: #9B7FFF;
+            --accent-color: #B39DFF;
+            --text-color: #333;
+            --bg-color: #fff;
+            --border-color: #ddd;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            --stats-bg: #f8f9fa;
-            --stats-border: #e9ecef;
-            --link-color: #007BFF;
-            --link-hover: #0056b3;
-            --diff-bg: #fff5f5;
-            --diff-border: #ff6b6b;
-            --missing-bg: #fff9e6;
-            --missing-border: #ffd93d;
+            --hover-color: #f5f5f5;
         }
 
         [data-theme="dark"] {
-            --primary-color: #64b5f6;
-            --primary-hover: #42a5f5;
+            --primary-color: #9B7FFF;
+            --secondary-color: #B39DFF;
+            --accent-color: #D4C5FF;
+            --text-color: #fff;
             --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --border-color: #404040;
-            --input-bg: #2d2d2d;
+            --border-color: #333;
             --shadow-color: rgba(0, 0, 0, 0.3);
-            --stats-bg: #2d2d2d;
-            --stats-border: #404040;
-            --link-color: #64b5f6;
-            --link-hover: #42a5f5;
-            --diff-bg: #3d2d2d;
-            --diff-border: #ff6b6b;
-            --missing-bg: #3d3d2d;
-            --missing-border: #ffd93d;
+            --hover-color: #2a2a2a;
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
             background-color: var(--bg-color);
@@ -56,251 +43,161 @@
 
         .header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 30px;
+            text-align: center;
         }
 
-        .header-content {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        h1 {
+        .header h1 {
+            font-size: 3em;
             margin: 0;
             color: var(--primary-color);
-            font-size: 2.5em;
+            font-weight: 700;
+            letter-spacing: 2px;
         }
 
-        .document-title {
-            color: var(--text-color);
-            opacity: 0.8;
+        .tagline {
             font-size: 1.2em;
-            margin: 0;
+            color: var(--secondary-color);
+            margin: 10px 0;
+            font-style: italic;
         }
 
         .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 1.1em;
+            position: absolute;
+            top: 20px;
+            right: 20px;
             padding: 8px 16px;
+            border: none;
             border-radius: 20px;
-            transition: background-color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
         }
 
         .theme-toggle:hover {
-            background-color: var(--stats-bg);
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
         .comparison-container {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
-            position: relative;
+            margin-bottom: 30px;
         }
 
-        .column {
-            width: 48%;
-            background-color: var(--input-bg);
+        .text-section {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px var(--shadow-color);
-            border-radius: 8px;
-            box-sizing: border-box;
         }
 
-        .column h2 {
-            text-align: center;
+        .section-title {
             color: var(--primary-color);
-            margin-bottom: 20px;
-        }
-
-        .text-content {
-            white-space: pre-wrap;
-            font-family: monospace;
-            line-height: 1.5;
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--input-bg);
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .text-content-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
         }
 
         .line-item {
-            padding: 4px 8px;
-            margin: 2px 0;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .line-item.different {
-            background-color: var(--diff-bg);
-            border-left: 3px solid var(--diff-border);
-        }
-
-        .line-item.missing {
-            background-color: var(--missing-bg);
-            border-left: 3px solid var(--missing-border);
-        }
-
-        .diff-highlight {
-            border-radius: 0;
-            margin: 0;
-            padding: 0;
-        }
-
-        .diff-highlight:first-child {
-            border-top-left-radius: 2px;
-            border-bottom-left-radius: 2px;
-        }
-
-        .diff-highlight:last-child {
-            border-top-right-radius: 2px;
-            border-bottom-right-radius: 2px;
-        }
-
-        .diff-highlight.added {
-            background-color: #ccffcc;
-            color: #006600;
-        }
-
-        .diff-highlight.removed {
-            background-color: #ffcccc;
-            color: #cc0000;
-            text-decoration: line-through;
-        }
-
-        [data-theme="dark"] .diff-highlight.added {
-            background-color: #1a3d1a;
-            color: #99ff99;
-        }
-
-        [data-theme="dark"] .diff-highlight.removed {
-            background-color: #3d1a1a;
-            color: #ff9999;
-        }
-
-        .diff-highlight.missing {
-            background-color: #ffeb3b;
-            color: #000000;
-            font-style: italic;
-            border-radius: 2px;
-            padding: 0 2px;
-        }
-
-        [data-theme="dark"] .diff-highlight.missing {
-            background-color: #3d3d2d;
-            color: #ffeb3b;
-        }
-
-        /* Update focused highlight style */
-        .diff-highlight.focused {
-            outline: none;
-            box-shadow: 0 0 0 2px var(--primary-color);
-        }
-
-        /* Make sure the focus outline wraps the entire group */
-        .diff-highlight.focused:first-child {
-            box-shadow: -2px 0 0 0 var(--primary-color),
-                       0 -2px 0 0 var(--primary-color),
-                       0 2px 0 0 var(--primary-color);
-        }
-
-        .diff-highlight.focused:last-child {
-            box-shadow: 2px 0 0 0 var(--primary-color),
-                       0 -2px 0 0 var(--primary-color),
-                       0 2px 0 0 var(--primary-color);
-        }
-
-        .diff-highlight.focused:not(:first-child):not(:last-child) {
-            box-shadow: 0 -2px 0 0 var(--primary-color),
-                       0 2px 0 0 var(--primary-color);
+            margin-bottom: 8px;
+            display: flex;
+            gap: 10px;
         }
 
         .line-number {
-            color: var(--text-color);
-            opacity: 0.7;
+            color: var(--secondary-color);
             font-size: 0.9em;
-            margin-right: 8px;
-            display: inline-block;
             min-width: 40px;
         }
 
-        /* Update navigation arrows styles */
-        .nav-arrows {
+        .diff-highlight {
+            background-color: var(--accent-color);
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .diff-highlight.added {
+            background-color: #90EE90;
+        }
+
+        .diff-highlight.removed {
+            background-color: #FFB6C1;
+        }
+
+        .diff-highlight.missing {
+            background-color: #FFD700;
+        }
+
+        .diff-highlight.focused {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .navigation {
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             gap: 10px;
-            position: absolute;
-            right: -60px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 10;
+            margin: 20px 0;
         }
 
         .nav-arrow {
-            background-color: var(--primary-color);
-            color: white;
+            background: var(--primary-color);
             border: none;
-            border-radius: 50%;
+            color: white;
             width: 40px;
             height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.3s;
             font-size: 20px;
+            transition: all 0.3s ease;
         }
 
         .nav-arrow:hover {
-            opacity: 1;
+            background: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
         .nav-arrow:disabled {
-            opacity: 0.3;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .nav-arrow.prev {
-            transform: rotate(90deg);
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
         }
 
-        .nav-arrow.next {
-            transform: rotate(90deg);
+        .back-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
             .comparison-container {
-                flex-direction: column;
+                grid-template-columns: 1fr;
             }
 
-            .column {
-                width: 100%;
+            .navigation {
+                flex-wrap: wrap;
             }
         }
     </style>
@@ -308,30 +205,29 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1 id="pageTitle">Text Comparison</h1>
-                <p id="documentTitle" class="document-title"></p>
-            </div>
+            <h1>Kaleid</h1>
+            <div class="tagline">See the patterns in your text</div>
             <button class="theme-toggle" onclick="toggleTheme()">🌓 <span id="themeText">Dark Mode</span></button>
         </div>
+
         <div class="comparison-container">
-    <div class="column">
-                <h2>Document Text</h2>
-                <div class="text-content-wrapper">
-                    <div id="documentText" class="text-content"></div>
-                </div>
-    </div>
-    <div class="column">
-                <h2>Site Text</h2>
-                <div class="text-content-wrapper">
-                    <div id="siteText" class="text-content"></div>
-                </div>
+            <div class="text-section">
+                <h2 class="section-title">Document Text</h2>
+                <div id="documentText"></div>
             </div>
-            <div class="nav-arrows">
-                <button class="nav-arrow prev" onclick="navigateHighlights('prev')">↓</button>
-                <button class="nav-arrow next" onclick="navigateHighlights('next')">↑</button>
+
+            <div class="text-section">
+                <h2 class="section-title">Site Text</h2>
+                <div id="siteText"></div>
             </div>
         </div>
+
+        <div class="navigation">
+            <button class="nav-arrow prev" onclick="navigateHighlights('prev')">←</button>
+            <button class="nav-arrow next" onclick="navigateHighlights('next')">→</button>
+    </div>
+
+        <a href="index.html" class="back-button">Back to Comparison</a>
     </div>
 
     <script>
@@ -349,41 +245,6 @@
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.body.setAttribute('data-theme', savedTheme);
         document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-
-        // Levenshtein distance for fuzzy matching
-        function levenshteinDistance(a, b) {
-            if (a.length === 0) return b.length;
-            if (b.length === 0) return a.length;
-
-            const matrix = [];
-            for (let i = 0; i <= b.length; i++) {
-                matrix[i] = [i];
-            }
-            for (let j = 0; j <= a.length; j++) {
-                matrix[0][j] = j;
-            }
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                        matrix[i][j] = matrix[i - 1][j - 1];
-                    } else {
-                        matrix[i][j] = Math.min(
-                            matrix[i - 1][j - 1] + 1,
-                            matrix[i][j - 1] + 1,
-                            matrix[i - 1][j] + 1
-                        );
-                    }
-                }
-            }
-            return matrix[b.length][a.length];
-        }
-
-        // Check if two lines are similar enough
-        function areLinesSimilar(line1, line2) {
-            const distance = levenshteinDistance(line1, line2);
-            const maxLength = Math.max(line1.length, line2.length);
-            return distance <= Math.floor(maxLength * 0.2); // 20% threshold
-        }
 
         // Create line element
         function createLineElement(line, lineNumber) {
@@ -523,7 +384,6 @@
                     console.log('First word:', firstWord); // Debug log
                     
                     if (firstWord) {
-                        document.getElementById('documentTitle').textContent = firstWord;
                         document.title = `${firstWord} - Text Comparison`;
                     }
                 }

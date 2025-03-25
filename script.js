@@ -172,6 +172,23 @@ function handlePaste(event) {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = text;
     
+    // Remove Microsoft Office specific attributes and functions
+    const elements = tempDiv.getElementsByTagName('*');
+    for (let i = elements.length - 1; i >= 0; i--) {
+        const element = elements[i];
+        // Remove all on* attributes (like onmouseout)
+        const attrs = element.attributes;
+        for (let j = attrs.length - 1; j >= 0; j--) {
+            if (attrs[j].name.startsWith('on')) {
+                element.removeAttribute(attrs[j].name);
+            }
+        }
+        // Remove class attributes that might contain Office-specific classes
+        if (element.hasAttribute('class')) {
+            element.removeAttribute('class');
+        }
+    }
+    
     // Preserve basic formatting while sanitizing
     const sanitizedText = tempDiv.innerHTML
         .replace(/<br\s*\/?>/gi, '\n')

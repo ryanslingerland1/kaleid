@@ -2,46 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Link Comparison</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaleid - Links Comparison</title>
     <style>
         :root {
-            --primary-color: #4c9baf;
-            --primary-hover: #3d8a9d;
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --border-color: #cccccc;
-            --input-bg: #ffffff;
+            --primary-color: #6B4EFF;
+            --secondary-color: #9B7FFF;
+            --accent-color: #B39DFF;
+            --text-color: #333;
+            --bg-color: #fff;
+            --border-color: #ddd;
             --shadow-color: rgba(0, 0, 0, 0.1);
-            --stats-bg: #f8f9fa;
-            --stats-border: #e9ecef;
-            --link-color: #007BFF;
-            --link-hover: #0056b3;
-            --diff-bg: #fff5f5;
-            --diff-border: #ff6b6b;
-            --missing-bg: #fff9e6;
-            --missing-border: #ffd93d;
+            --hover-color: #f5f5f5;
         }
 
         [data-theme="dark"] {
-            --primary-color: #64b5f6;
-            --primary-hover: #42a5f5;
+            --primary-color: #9B7FFF;
+            --secondary-color: #B39DFF;
+            --accent-color: #D4C5FF;
+            --text-color: #fff;
             --bg-color: #1a1a1a;
-            --text-color: #e0e0e0;
-            --border-color: #404040;
-            --input-bg: #2d2d2d;
+            --border-color: #333;
             --shadow-color: rgba(0, 0, 0, 0.3);
-            --stats-bg: #2d2d2d;
-            --stats-border: #404040;
-            --link-color: #64b5f6;
-            --link-hover: #42a5f5;
-            --diff-bg: #3d2d2d;
-            --diff-border: #ff6b6b;
-            --missing-bg: #3d3d2d;
-            --missing-border: #ffd93d;
+            --hover-color: #2a2a2a;
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
             background-color: var(--bg-color);
@@ -56,130 +43,132 @@
 
         .header {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 30px;
+            text-align: center;
         }
 
-        .header-content {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        h1 {
+        .header h1 {
+            font-size: 3em;
             margin: 0;
             color: var(--primary-color);
-            font-size: 2.5em;
+            font-weight: 700;
+            letter-spacing: 2px;
         }
 
-        .document-title {
-            color: var(--text-color);
-            opacity: 0.8;
+        .tagline {
             font-size: 1.2em;
-            margin: 0;
+            color: var(--secondary-color);
+            margin: 10px 0;
+            font-style: italic;
         }
 
         .theme-toggle {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 1.1em;
+            position: absolute;
+            top: 20px;
+            right: 20px;
             padding: 8px 16px;
+            border: none;
             border-radius: 20px;
-            transition: background-color 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
         }
 
         .theme-toggle:hover {
-            background-color: var(--stats-bg);
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
-        .comparison-container {
-            display: flex;
-            justify-content: space-between;
+        .links-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 20px;
+            margin-bottom: 30px;
         }
 
-        .column {
-            width: 48%;
-            background-color: var(--input-bg);
+        .links-section {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px var(--shadow-color);
-            border-radius: 8px;
-            box-sizing: border-box;
         }
 
-        .column h2 {
-            text-align: center;
+        .section-title {
             color: var(--primary-color);
-            margin-bottom: 20px;
+            margin: 0 0 20px 0;
+            font-size: 1.5em;
         }
 
-        .link-list {
-            list-style-type: none;
+        .links-list {
+            list-style: none;
             padding: 0;
             margin: 0;
         }
 
         .link-item {
-            margin-bottom: 15px;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: var(--input-bg);
+            border-radius: 6px;
+            margin-bottom: 10px;
             transition: all 0.3s ease;
         }
 
-        .link-item.different {
-            border-color: var(--diff-border);
-            background-color: var(--diff-bg);
+        .link-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px var(--shadow-color);
         }
 
         .link-item.missing {
-            border-color: var(--missing-border);
-            background-color: var(--missing-bg);
+            background-color: #fff3cd;
+            border-color: #ffeeba;
         }
 
-        .link-item a {
-            text-decoration: none;
-            color: var(--link-color);
-            word-break: break-all;
-            transition: color 0.3s;
-        }
-
-        .link-item a:hover {
-            color: var(--link-hover);
-            text-decoration: underline;
+        .link-item.different {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
         }
 
         .line-number {
-            color: var(--text-color);
-            opacity: 0.7;
-            font-size: 0.9em;
-            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: var(--secondary-color);
+            margin-bottom: 6px;
+        }
+
+        .link-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .link-item a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .comparison-container {
-                flex-direction: column;
-            }
-
-            .column {
-                width: 100%;
+            .links-container {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -187,22 +176,28 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="header-content">
-                <h1 id="pageTitle">Link Comparison</h1>
-                <p id="documentTitle" class="document-title"></p>
-            </div>
+            <h1>Kaleid</h1>
+            <div class="tagline">See the patterns in your text</div>
             <button class="theme-toggle" onclick="toggleTheme()">🌓 <span id="themeText">Dark Mode</span></button>
         </div>
-        <div class="comparison-container">
-            <div class="column">
-                <h2>Document Links</h2>
-                <ul id="documentLinks" class="link-list"></ul>
+
+        <div class="links-container">
+            <div class="links-section">
+                <h2 class="section-title">Document Links</h2>
+                <ul class="links-list" id="documentLinks">
+                    <!-- Document links will be added here -->
+                </ul>
             </div>
-            <div class="column">
-                <h2>Site Links</h2>
-                <ul id="siteLinks" class="link-list"></ul>
+
+            <div class="links-section">
+                <h2 class="section-title">Site Links</h2>
+                <ul class="links-list" id="siteLinks">
+                    <!-- Site links will be added here -->
+                </ul>
             </div>
         </div>
+
+        <a href="index.html" class="back-button">Back to Comparison</a>
     </div>
 
     <script>
@@ -220,41 +215,6 @@
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.body.setAttribute('data-theme', savedTheme);
         document.getElementById('themeText').textContent = savedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-
-        // Levenshtein distance for fuzzy matching
-        function levenshteinDistance(a, b) {
-            if (a.length === 0) return b.length;
-            if (b.length === 0) return a.length;
-
-            const matrix = [];
-            for (let i = 0; i <= b.length; i++) {
-                matrix[i] = [i];
-            }
-            for (let j = 0; j <= a.length; j++) {
-                matrix[0][j] = j;
-            }
-            for (let i = 1; i <= b.length; i++) {
-                for (let j = 1; j <= a.length; j++) {
-                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                        matrix[i][j] = matrix[i - 1][j - 1];
-                    } else {
-                        matrix[i][j] = Math.min(
-                            matrix[i - 1][j - 1] + 1,
-                            matrix[i][j - 1] + 1,
-                            matrix[i - 1][j] + 1
-                        );
-                    }
-                }
-            }
-            return matrix[b.length][a.length];
-        }
-
-        // Check if two links are similar enough
-        function areLinksSimilar(link1, link2) {
-            const distance = levenshteinDistance(link1, link2);
-            const maxLength = Math.max(link1.length, link2.length);
-            return distance <= Math.floor(maxLength * 0.2); // 20% threshold
-        }
 
         // Create link element
         function createLinkElement(link, lineNumber) {
@@ -306,7 +266,6 @@
                     // Get the first word from the first non-empty line
                     const firstWord = firstNonEmptyLine.trim().split(/\s+/)[0];
                     if (firstWord) {
-                        document.getElementById('documentTitle').textContent = firstWord;
                         document.title = `${firstWord} - Links Comparison`;
                     }
                 }
@@ -321,27 +280,28 @@
             const maxLength = Math.max(documentLinks.length, siteLinks.length);
 
             for (let i = 0; i < maxLength; i++) {
-                const documentLink = documentLinks[i] || '';
-                const siteLink = siteLinks[i] || '';
+                const documentLink = documentLinks[i];
+                const siteLink = siteLinks[i];
 
-                const documentLi = createLinkElement(documentLink, i);
-                const siteLi = createLinkElement(siteLink, i);
-
-                if (documentLink !== siteLink) {
-                    if (!documentLink) {
-                        documentLi.classList.add('missing');
-                        siteLi.classList.add('different');
-                    } else if (!siteLink) {
-                        documentLi.classList.add('different');
-                        siteLi.classList.add('missing');
-                    } else if (!areLinksSimilar(documentLink, siteLink)) {
-                        documentLi.classList.add('different');
-                        siteLi.classList.add('different');
+                if (documentLink) {
+                    const li = createLinkElement(documentLink, i);
+                    if (!siteLink) {
+                        li.classList.add('missing');
+                    } else if (documentLink !== siteLink) {
+                        li.classList.add('different');
                     }
+                    documentLinksList.appendChild(li);
                 }
 
-                documentLinksList.appendChild(documentLi);
-                siteLinksList.appendChild(siteLi);
+                if (siteLink) {
+                    const li = createLinkElement(siteLink, i);
+                    if (!documentLink) {
+                        li.classList.add('missing');
+                    } else if (documentLink !== siteLink) {
+                        li.classList.add('different');
+                    }
+                    siteLinksList.appendChild(li);
+                }
             }
         }
 
