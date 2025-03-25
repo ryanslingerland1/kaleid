@@ -1,8 +1,4 @@
-# Kaleid - Text Comparison Tool
-
-## About the Name
-
-Kaleid is derived from the word "kaleidoscope" - an optical instrument that creates, symmetrical patterns by reflecting light through mirrors and colored glass.
+# Kaleid - A Text Comparison Tool
 
 A modern, user-friendly web application for comparing text content with advanced highlighting and navigation features. This tool helps identify differences between two text versions with a focus on readability and ease of use.
 
@@ -67,6 +63,10 @@ The application works on all modern browsers:
 - Firefox
 - Safari
 - Edge
+
+## About the Name
+
+Kaleid is derived from the word "kaleidoscope" - an optical instrument that creates, symmetrical patterns by reflecting light through mirrors and colored glass.
 
 ## License
 
