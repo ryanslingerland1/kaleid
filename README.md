@@ -4,7 +4,7 @@ A modern, user-friendly web application for comparing text content with advanced
 
 ## Access
 
-https://ryanslingerland1.github.io/textcompare/
+https://ryanslingerland1.github.io/kaleid/
 
 ## Technology
 
