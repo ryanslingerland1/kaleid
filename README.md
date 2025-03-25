@@ -1,9 +1,34 @@
-# Text Comparison Tool
+# Kaleid - Text Comparison Tool
 
-## Access
-- https://ryanslingerland1.github.io/textcompare/
+## About the Name
+
+Kaleid is derived from the word "kaleidoscope" - an optical instrument that creates, symmetrical patterns by reflecting light through mirrors and colored glass.
 
 A modern, user-friendly web application for comparing text content with advanced highlighting and navigation features. This tool helps identify differences between two text versions with a focus on readability and ease of use.
+
+## Access
+
+https://ryanslingerland1.github.io/textcompare/
+
+## Technology
+
+Built with vanilla JavaScript and modern CSS, Kaleid runs entirely in the browser with no server-side dependencies. All data is stored locally in your browser's localStorage.
+
+## Features
+
+- Compare text from different sources
+- Process and analyze text content
+- Compare links between documents
+- Track comparison history
+- Dark/Light mode support
+- Modern, intuitive interface
+
+## Getting Started
+
+1. Paste your text into the Document Text and Site Text sections
+2. Use the comparison tools to analyze differences
+3. View processed text or link comparisons in separate tabs
+4. Access your comparison history at any time
 
 ## Features
 
@@ -42,3 +67,7 @@ The application works on all modern browsers:
 - Firefox
 - Safari
 - Edge
+
+## License
+
+This project is open source and available under the MIT License.
