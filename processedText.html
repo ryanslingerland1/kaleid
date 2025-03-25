@@ -34,19 +34,25 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -83,11 +89,22 @@
             transform: translateY(-2px);
         }
 
+        .theme-toggle:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .comparison-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 20px;
+            box-sizing: border-box;
         }
 
         .text-section {
@@ -96,12 +113,51 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 4px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .section-title {
             color: var(--primary-color);
-            margin: 0 0 20px 0;
+            margin: 0 0 15px 0;
             font-size: 1.5em;
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-color);
+            padding-bottom: 10px;
+            z-index: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .text-content {
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            padding-right: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary-color) var(--border-color);
+        }
+
+        .text-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .text-content::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .text-content::-webkit-scrollbar-thumb {
+            background-color: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .text-content::-webkit-scrollbar-thumb:hover {
+            background-color: var(--secondary-color);
         }
 
         .line-item {
@@ -120,13 +176,13 @@
         }
 
         .diff-highlight {
-            background-color: var(--accent-color);
+            background-color: #FFB6C1;
             padding: 2px 4px;
             border-radius: 2px;
         }
 
         .diff-highlight.added {
-            background-color: #90EE90;
+            background-color: #FFB6C1;
         }
 
         .diff-highlight.removed {
@@ -140,39 +196,6 @@
         .diff-highlight.focused {
             outline: 2px solid var(--primary-color);
             outline-offset: 2px;
-        }
-
-        .navigation {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .nav-arrow {
-            background: var(--primary-color);
-            border: none;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .nav-arrow:hover {
-            background: var(--secondary-color);
-            transform: translateY(-2px);
-        }
-
-        .nav-arrow:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
         }
 
         .back-button {
@@ -195,10 +218,6 @@
             .comparison-container {
                 grid-template-columns: 1fr;
             }
-
-            .navigation {
-                flex-wrap: wrap;
-            }
         }
     </style>
 </head>
@@ -213,18 +232,13 @@
         <div class="comparison-container">
             <div class="text-section">
                 <h2 class="section-title">Document Text</h2>
-                <div id="documentText"></div>
+                <div class="text-content" id="documentText"></div>
             </div>
 
             <div class="text-section">
                 <h2 class="section-title">Site Text</h2>
-                <div id="siteText"></div>
+                <div class="text-content" id="siteText"></div>
             </div>
-        </div>
-
-        <div class="navigation">
-            <button class="nav-arrow prev" onclick="navigateHighlights('prev')">←</button>
-            <button class="nav-arrow next" onclick="navigateHighlights('next')">→</button>
     </div>
 
         <a href="index.html" class="back-button">Back to Comparison</a>
@@ -264,106 +278,7 @@
             return div;
         }
 
-        // Add these new functions before the initial load
-        let currentHighlightIndex = -1;
-        let allHighlights = [];
-        let highlightGroups = [];
-
-        function groupAdjacentHighlights() {
-            // Get all highlights from both document and site text
-            const documentHighlights = [...document.querySelector('#documentText').querySelectorAll('.diff-highlight')];
-            const siteHighlights = [...document.querySelector('#siteText').querySelectorAll('.diff-highlight')];
-            
-            highlightGroups = [];
-            
-            // Helper function to group adjacent highlights
-            function groupHighlightsInText(highlights) {
-                let currentGroup = [];
-                
-                for (let i = 0; i < highlights.length; i++) {
-                    const current = highlights[i];
-                    const next = highlights[i + 1];
-                    
-                    currentGroup.push(current);
-                    
-                    // Check if this is the last highlight or if there's a gap
-                    if (!next || !areCharactersAdjacent(current, next)) {
-                        if (currentGroup.length > 0) {
-                            highlightGroups.push([...currentGroup]);
-                        }
-                        currentGroup = [];
-                    }
-                }
-            }
-            
-            // Group highlights in both text areas
-            groupHighlightsInText(documentHighlights);
-            groupHighlightsInText(siteHighlights);
-            
-            // Update allHighlights to contain only the first highlight of each group
-            allHighlights = highlightGroups.map(group => group[0]);
-            console.log('Found highlight groups:', highlightGroups.length);
-        }
-
-        function areCharactersAdjacent(el1, el2) {
-            // Check if elements are in the same text container
-            if (!el1.parentElement.contains(el2)) return false;
-            
-            // Get the text node positions
-            const range1 = document.createRange();
-            range1.selectNode(el1);
-            const range2 = document.createRange();
-            range2.selectNode(el2);
-            
-            // Check if the end of first element is immediately before start of second
-            const endPos1 = range1.getBoundingClientRect().right;
-            const startPos2 = range2.getBoundingClientRect().left;
-            
-            // Allow for a small gap (2 pixels) to account for spacing
-            return Math.abs(endPos1 - startPos2) <= 2;
-        }
-
-        function navigateHighlights(direction) {
-            if (allHighlights.length === 0) return;
-
-            // Remove focus from current group
-            if (currentHighlightIndex >= 0) {
-                highlightGroups[currentHighlightIndex].forEach(highlight => {
-                    highlight.classList.remove('focused');
-                });
-            }
-
-            // Update index
-            if (direction === 'next') {
-                currentHighlightIndex = (currentHighlightIndex + 1) % allHighlights.length;
-            } else {
-                currentHighlightIndex = (currentHighlightIndex - 1 + allHighlights.length) % allHighlights.length;
-            }
-
-            // Add focus to new group
-            highlightGroups[currentHighlightIndex].forEach(highlight => {
-                highlight.classList.add('focused');
-            });
-
-            // Scroll the first highlight of the group into view
-            allHighlights[currentHighlightIndex].scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-
-            updateNavigationButtons();
-            console.log('Navigated to group:', currentHighlightIndex);
-        }
-
-        function updateNavigationButtons() {
-            const prevButton = document.querySelector('.nav-arrow.prev');
-            const nextButton = document.querySelector('.nav-arrow.next');
-            
-            prevButton.disabled = currentHighlightIndex <= 0;
-            nextButton.disabled = currentHighlightIndex >= allHighlights.length - 1;
-        }
-
-        // Update the compareAndDisplayText function to use highlight groups
+        // Update the compareAndDisplayText function
         function compareAndDisplayText() {
             const processedDocumentText = localStorage.getItem('processedDocumentText');
             const processedSiteText = localStorage.getItem('processedSiteText');
@@ -381,12 +296,7 @@
                 
                 const maxLength = Math.max(documentLines.length, siteLines.length);
 
-                // Reset highlights array
-                allHighlights = [];
-                currentHighlightIndex = -1;
-                highlightGroups = [];
-
-                for (let i = 0; i < maxLength; i++) {
+            for (let i = 0; i < maxLength; i++) {
                     const documentLine = (documentLines[i] || '').trim();
                     const siteLine = (siteLines[i] || '').trim();
 
@@ -461,25 +371,98 @@
                         }
                         
                         // Build the HTML content
+                        let currentDocHighlight = '';
+                        let currentDocType = '';
+                        let currentSiteHighlight = '';
+                        let currentSiteType = '';
+                        let consecutiveMissing = false;
+
                         docResult.forEach(([type, char]) => {
                             if (type === 'same') {
+                                // If we have a pending highlight, add it first
+                                if (currentDocHighlight) {
+                                    docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                                    currentDocHighlight = '';
+                                    currentDocType = '';
+                                }
+                                consecutiveMissing = false;
                                 docContent += char;
-                            } else if (type === 'removed') {
-                                docContent += `<span class="diff-highlight removed" data-highlight="true">${char}</span>`;
                             } else if (type === 'missing') {
-                                docContent += `<span class="diff-highlight missing" data-highlight="true"> </span>`;
+                                // If we have a pending highlight, add it first
+                                if (currentDocHighlight) {
+                                    docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                                }
+                                // Only add [missing] if this is the first missing character in a sequence
+                                if (!consecutiveMissing) {
+                                    docContent += `<span class="diff-highlight missing">[missing]</span>`;
+                                }
+                                consecutiveMissing = true;
+                                currentDocHighlight = '';
+                                currentDocType = '';
+                            } else {
+                                consecutiveMissing = false;
+                                // If this is the same type as the current highlight, append to it
+                                if (type === currentDocType) {
+                                    currentDocHighlight += char;
+                                } else {
+                                    // If we have a pending highlight, add it first
+                                    if (currentDocHighlight) {
+                                        docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                                    }
+                                    currentDocHighlight = char;
+                                    currentDocType = type;
+                                }
                             }
                         });
                         
+                        // Add any remaining highlight
+                        if (currentDocHighlight) {
+                            docContent += `<span class="diff-highlight ${currentDocType}">${currentDocHighlight}</span>`;
+                        }
+
+                        consecutiveMissing = false;
                         siteResult.forEach(([type, char]) => {
                             if (type === 'same') {
+                                // If we have a pending highlight, add it first
+                                if (currentSiteHighlight) {
+                                    siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                                    currentSiteHighlight = '';
+                                    currentSiteType = '';
+                                }
+                                consecutiveMissing = false;
                                 siteContent += char;
-                            } else if (type === 'added') {
-                                siteContent += `<span class="diff-highlight added" data-highlight="true">${char}</span>`;
                             } else if (type === 'missing') {
-                                siteContent += `<span class="diff-highlight missing" data-highlight="true"> </span>`;
+                                // If we have a pending highlight, add it first
+                                if (currentSiteHighlight) {
+                                    siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                                }
+                                // Only add [missing] if this is the first missing character in a sequence
+                                if (!consecutiveMissing) {
+                                    siteContent += `<span class="diff-highlight missing">[missing]</span>`;
+                                }
+                                consecutiveMissing = true;
+                                currentSiteHighlight = '';
+                                currentSiteType = '';
+                            } else {
+                                consecutiveMissing = false;
+                                // If this is the same type as the current highlight, append to it
+                                if (type === currentSiteType) {
+                                    currentSiteHighlight += char;
+                                } else {
+                                    // If we have a pending highlight, add it first
+                                    if (currentSiteHighlight) {
+                                        siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                                    }
+                                    currentSiteHighlight = char;
+                                    currentSiteType = type;
+                                }
                             }
                         });
+
+                        // Add any remaining highlight
+                        if (currentSiteHighlight) {
+                            siteContent += `<span class="diff-highlight ${currentSiteType}">${currentSiteHighlight}</span>`;
+                        }
 
                         documentLineElement.querySelector('span:not(.line-number)').innerHTML = docContent;
                         siteLineElement.querySelector('span:not(.line-number)').innerHTML = siteContent;
@@ -488,21 +471,29 @@
                     documentTextDiv.appendChild(documentLineElement);
                     siteTextDiv.appendChild(siteLineElement);
                 }
-
-                // Group highlights and update navigation
-                groupAdjacentHighlights();
-                if (allHighlights.length > 0) {
-                    currentHighlightIndex = 0;
-                    highlightGroups[0].forEach(highlight => {
-                        highlight.classList.add('focused');
-                    });
-                }
-                updateNavigationButtons();
             }
         }
 
         // Initial load
         compareAndDisplayText();
+
+        // Synchronize scrolling between text sections
+        document.addEventListener('DOMContentLoaded', function() {
+            const docContent = document.querySelector('#documentText');
+            const siteContent = document.querySelector('#siteText');
+
+            function syncScroll(source, target) {
+                target.scrollTop = source.scrollTop;
+            }
+
+            docContent.addEventListener('scroll', function() {
+                syncScroll(docContent, siteContent);
+            });
+
+            siteContent.addEventListener('scroll', function() {
+                syncScroll(siteContent, docContent);
+            });
+        });
     </script>
 </body>
 </html>
